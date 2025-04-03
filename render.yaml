@@ -21,4 +21,6 @@ services:
 
       # 🔐 Biến môi trường nhạy cảm – không ghi giá trị trong file YAML
       - key: MYSQL_PASSWORD
+        value: ""
       - key: JWT_SECRET
+        value: ""
