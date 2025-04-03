@@ -5,7 +5,7 @@ services:
     plan: free
     branch: master
     buildCommand: npm install
-    startCommand: node server.js
+    startCommand: node ./src/server.js
     envVars:
       # 🟢 Biến môi trường không nhạy cảm
       - key: MYSQL_HOST
