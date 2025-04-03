@@ -7,8 +7,33 @@ const {
     notFoundResponse,
     serverErrorResponse
 } = require("../utils/responseHelper");
+const multer = require("multer");
+
+const uploadCsv = multer({
+    dest: "uploads/csv/",
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype === "text/csv" || file.originalname.endsWith(".csv")) {
+            cb(null, true);
+        } else {
+            cb(new Error("Chỉ chấp nhận file .csv"), false);
+        }
+    }
+});
 
 const QuestionController = {
+    // ✅ Phân trang câu hỏi
+    async getPaginatedQuestions(req, res) {
+        try {
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 10;
+
+            const result = await QuestionService.getPaginatedQuestions(page, limit);
+            return successResponse(res, "Lấy danh sách câu hỏi thành công", result);
+        } catch (error) {
+            console.error("Lỗi phân trang câu hỏi:", error);
+            return serverErrorResponse(res, "Lỗi hệ thống");
+        }
+    },
     // 🟢 Lấy danh sách tất cả câu hỏi
     async getAllQuestions(req, res) {
         try {
@@ -59,10 +84,30 @@ const QuestionController = {
     // 🟢 Tạo câu hỏi mới
     async createQuestion(req, res) {
         try {
+            const {
+                part_id,
+                exam_id,
+                question_text,
+                option_a,
+                option_b,
+                option_c,
+                option_d,
+                correct_answer
+            } = req.body;
+
+            // ✅ Kiểm tra dữ liệu đầu vào
+            if (!part_id || !exam_id || !question_text || !option_a || !option_b || !option_c || !correct_answer) {
+                return res.status(400).json({
+                    message: "Thiếu trường bắt buộc! Vui lòng điền đầy đủ các trường: part_id, exam_id, question_text, option_a, option_b, option_c, correct_answer"
+                });
+            }
+
+            // ✅ Tạo câu hỏi
             const newQuestion = await QuestionService.createQuestion(req.body);
-            return createdResponse(res, "Câu hỏi đã được tạo", newQuestion);
+            return createdResponse(res, "✅ Câu hỏi đã được tạo", newQuestion);
         } catch (error) {
-            return serverErrorResponse(res, "Lỗi khi tạo câu hỏi", error);
+            console.error("❌ Lỗi khi tạo câu hỏi:", error);
+            return serverErrorResponse(res, "❌ Lỗi khi tạo câu hỏi", error);
         }
     },
 
@@ -124,7 +169,57 @@ const QuestionController = {
         } catch (error) {
             return serverErrorResponse(res, "Lỗi khi xóa ảnh");
         }
+    },
+    // 🟢 Import câu hỏi từ file CSV
+    async importQuestionsFromCSV(filePath) {
+        const questions = [];
+
+        return new Promise((resolve, reject) => {
+            fs.createReadStream(filePath)
+                .pipe(csvParser())
+                .on("data", (row) => {
+                    // mapping từ CSV sang model
+                    const mapped = {
+                        exam_id: Number(row.exam_id),
+                        part_id: Number(row.part_id),
+                        question_text: row.question_text,
+                        option_a: row.option_a,
+                        option_b: row.option_b,
+                        option_c: row.option_c,
+                        option_d: row.option_d || null,
+                        correct_answer: row.correct_answer,
+                        order: row.order ? Number(row.order) : null,
+                    };
+                    questions.push(mapped);
+                })
+                .on("end", async () => {
+                    try {
+                        const created = await Question.bulkCreate(questions);
+                        resolve(created);
+                    } catch (err) {
+                        reject(err);
+                    }
+                })
+                .on("error", (err) => reject(err));
+        });
+    },
+    // 🟢 Import câu hỏi từ file CSV
+    async importFromCSV(req, res) {
+        try {
+            if (!req.file) {
+                return res.status(400).json({ message: "Vui lòng tải lên file CSV!" });
+            }
+
+            const result = await QuestionService.importQuestionsFromCSV(req.file.path);
+            return createdResponse(res, `✅ Đã import ${result.length} câu hỏi thành công`, result);
+        } catch (error) {
+            console.error("❌ Lỗi khi import CSV:", error);
+            return serverErrorResponse(res, "❌ Lỗi khi import câu hỏi từ CSV", error);
+        }
     }
 };
 
-module.exports = QuestionController;
+module.exports = {
+    ...QuestionController,
+    uploadCsv // export thêm để dùng ở route
+};

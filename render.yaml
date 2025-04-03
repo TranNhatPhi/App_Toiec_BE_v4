@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: app-toiec-be-v4
+    env: node
+    plan: free
+    branch: master
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      # 🟢 Biến môi trường không nhạy cảm
+      - key: MYSQL_HOST
+        value: mysql-toiecapp-phivt1234-87ba.h.aivencloud.com
+      - key: MYSQL_PORT
+        value: 21829
+      - key: MYSQL_USER
+        value: avnadmin
+      - key: MYSQL_DATABASE
+        value: apptoiecv3
+      - key: BASE_URL
+        value: https://app-toiec-be-v4.onrender.com
+
+      # 🔐 Biến môi trường nhạy cảm – không ghi giá trị trong file YAML
+      - key: MYSQL_PASSWORD
+      - key: JWT_SECRET

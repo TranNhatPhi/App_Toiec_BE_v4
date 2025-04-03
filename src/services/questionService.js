@@ -1,6 +1,23 @@
 const Question = require("../models/question");
-
+const fs = require("fs");
+const csvParser = require("csv-parser");
 const QuestionService = {
+    async getPaginatedQuestions(page = 1, limit = 10) {
+        const offset = (page - 1) * limit;
+
+        const { rows, count } = await Question.findAndCountAll({
+            offset,
+            limit,
+            order: [["id", "ASC"]],
+        });
+
+        return {
+            questions: rows,
+            total: count,
+            page,
+            limit,
+        };
+    },
     // 🟢 Lấy tất cả câu hỏi
     async getAllQuestions() {
         return await Question.findAll();
@@ -48,6 +65,39 @@ const QuestionService = {
         if (!question) return null;
         await question.update({ image_filename });
         return question;
+    },
+    // 🟢 Import câu hỏi từ file CSV
+    async importQuestionsFromCSV(filePath) {
+        const questions = [];
+
+        return new Promise((resolve, reject) => {
+            fs.createReadStream(filePath)
+                .pipe(csvParser())
+                .on("data", (row) => {
+                    // mapping từ CSV sang model
+                    const mapped = {
+                        exam_id: Number(row.exam_id),
+                        part_id: Number(row.part_id),
+                        question_text: row.question_text,
+                        option_a: row.option_a,
+                        option_b: row.option_b,
+                        option_c: row.option_c,
+                        option_d: row.option_d || null,
+                        correct_answer: row.correct_answer,
+                        order: row.order ? Number(row.order) : null,
+                    };
+                    questions.push(mapped);
+                })
+                .on("end", async () => {
+                    try {
+                        const created = await Question.bulkCreate(questions);
+                        resolve(created);
+                    } catch (err) {
+                        reject(err);
+                    }
+                })
+                .on("error", (err) => reject(err));
+        });
     }
 };
 

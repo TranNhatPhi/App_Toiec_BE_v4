@@ -26,6 +26,31 @@ router.get("/", QuestionController.getAllQuestions);
 
 /**
  * @swagger
+ * /api/questions/paginate:
+ *   get:
+ *     summary: Lấy danh sách câu hỏi có phân trang
+ *     tags: [Questions]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Trang hiện tại
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Số lượng câu hỏi mỗi trang
+ *     responses:
+ *       200:
+ *         description: Trả về danh sách câu hỏi theo phân trang
+ */
+router.get("/paginate", QuestionController.getPaginatedQuestions);
+
+/**
+ * @swagger
  * /api/questions/countallquestion:
  *   get:
  *     summary: Lấy tổng số câu hỏi
@@ -95,6 +120,9 @@ router.get("/part/:part_id", QuestionController.getQuestionsByPart);
  *           schema:
  *             type: object
  *             properties:
+ *               exam_id:
+ *                 type: integer
+ *                 example: 1
  *               part_id:
  *                 type: integer
  *                 example: 3
@@ -259,6 +287,38 @@ router.post("/upload/:id", verifyToken, upload, optimizeImage, QuestionControlle
  *         description: Chưa đăng nhập
  */
 router.delete("/remove-image/:id", verifyToken, QuestionController.removeQuestionImage);
+/**
+ * @swagger
+ * /api/questions/import-csv:
+ *   post:
+ *     summary: Import câu hỏi từ file CSV
+ *     tags: [Questions]
+ *     security:
+ *       - BearerAuth: []
+ *     consumes:
+ *       - multipart/form-data
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *                 description: File CSV chứa danh sách câu hỏi
+ *     responses:
+ *       200:
+ *         description: Import thành công và trả về danh sách câu hỏi đã thêm
+ *       400:
+ *         description: File CSV không hợp lệ
+ *       401:
+ *         description: Chưa đăng nhập
+ *       500:
+ *         description: Lỗi hệ thống khi xử lý file CSV
+ */
+router.post("/import-csv", verifyToken, QuestionController.uploadCsv.single("file"), QuestionController.importFromCSV);
 
 
 module.exports = router;

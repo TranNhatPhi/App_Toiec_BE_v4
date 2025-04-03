@@ -4,7 +4,7 @@ const path = require("path");
 const fs = require("fs");
 
 // 🟢 Cấu hình lưu trữ file ảnh
-const storage = multer.diskStorage({
+const imageStorage = multer.diskStorage({
     destination: (req, file, cb) => {
         const uploadPath = "uploads/questions/";
         if (!fs.existsSync(uploadPath)) {
@@ -18,7 +18,7 @@ const storage = multer.diskStorage({
 });
 
 // 🟢 Bộ lọc file (chỉ chấp nhận ảnh)
-const fileFilter = (req, file, cb) => {
+const imageFileFilter = (req, file, cb) => {
     const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
     if (allowedTypes.includes(file.mimetype)) {
         cb(null, true);
@@ -27,8 +27,8 @@ const fileFilter = (req, file, cb) => {
     }
 };
 
-// 🟢 Middleware xử lý upload
-const upload = multer({ storage, fileFilter }).single("image");
+// 🟢 Middleware xử lý upload ảnh
+const upload = multer({ storage: imageStorage, fileFilter: imageFileFilter }).single("image");
 
 // 🟢 Middleware tối ưu ảnh (giảm dung lượng)
 const optimizeImage = async (req, res, next) => {
@@ -55,4 +55,30 @@ const optimizeImage = async (req, res, next) => {
     }
 };
 
-module.exports = { upload, optimizeImage };
+// 🟢 Cấu hình lưu trữ file CSV
+const csvStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const uploadPath = "uploads/csv/";
+        if (!fs.existsSync(uploadPath)) {
+            fs.mkdirSync(uploadPath, { recursive: true });
+        }
+        cb(null, uploadPath);
+    },
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + "-" + file.originalname);
+    }
+});
+
+// 🟢 Bộ lọc file CSV
+const csvFileFilter = (req, file, cb) => {
+    if (file.mimetype === "text/csv" || file.originalname.endsWith(".csv")) {
+        cb(null, true);
+    } else {
+        cb(new Error("Chỉ chấp nhận file CSV!"), false);
+    }
+};
+
+// 🟢 Middleware upload CSV
+const uploadCSV = multer({ storage: csvStorage, fileFilter: csvFileFilter }).single("file");
+
+module.exports = { upload, optimizeImage, uploadCSV };

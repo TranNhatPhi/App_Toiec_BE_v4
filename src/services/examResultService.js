@@ -17,6 +17,55 @@ const ExamResultService = {
             throw new Error("Không thể lấy danh sách kết quả bài thi");
         }
     },
+    // 🟢 Lấy tất cả kết quả bài thi với phân trang
+    async getAllExamResults1() {
+
+        const rows = await ExamResult.findAll({
+            order: [["completed_at", "ASC"]],
+            include: [
+                {
+                    model: User,
+                    attributes: ["id", "email", "fullname"] // ✅ đúng tên cột
+                },
+                {
+                    model: Exam,
+                    attributes: ["id", "title", "total_questions", "duration"]
+                }
+            ]
+        });
+
+        return {
+            results: rows,
+        };
+    },
+    // 🟢 Lấy tất cả kết quả bài thi với phân trang
+    async getExamResultsWithPagination(page = 1, limit = 10) {
+        const offset = (page - 1) * limit;
+
+        const { rows, count } = await ExamResult.findAndCountAll({
+            offset,
+            limit,
+            order: [["completed_at", "DESC"]],
+            include: [
+                {
+                    model: User,
+                    attributes: ["id", "email", "fullname"] // ✅ đúng tên cột
+                },
+                {
+                    model: Exam,
+                    attributes: ["id", "title", "total_questions", "duration"]
+                }
+            ]
+        });
+
+        return {
+            results: rows,
+            total: count,
+            page,
+            limit,
+        };
+    },
+
 
     // 🟢 Lấy kết quả bài thi theo ID
     async getExamResultById(resultId) {
@@ -284,6 +333,15 @@ const ExamResultService = {
             console.error("❌ Lỗi khi tính điểm trung bình:", error);
             throw new Error("Lỗi khi lấy điểm trung bình trong 7 ngày gần đây");
         }
+    },
+
+    // services/examResultService.js
+    async deleteExamResult(id) {
+        const result = await ExamResult.findByPk(id);
+        if (!result) return null; // nếu không có -> trả về null
+
+        await result.destroy(); // xoá bản ghi
+        return result;
     },
 
 

@@ -25,6 +25,42 @@ router.get("/", ExamResultController.getAllExamResults);
 
 /**
  * @swagger
+ * /api/exam-results/all:
+ *   get:
+ *     summary: Lấy danh sách tất cả kết quả bài thi
+ *     tags: [ExamResults]
+ *     responses:
+ *       200:
+ *         description: Trả về danh sách kết quả bài thi
+ */
+router.get("/all", ExamResultController.getAllExamResults1);
+
+/**
+ * @swagger
+ * /api/exam-results/paginate:
+ *   get:
+ *     summary: Lấy kết quả bài thi theo phân trang
+ *     tags: [ExamResults]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Số trang hiện tại
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Số lượng bản ghi mỗi trang
+ *     responses:
+ *       200:
+ *         description: Danh sách kết quả bài thi và tổng số lượng
+ */
+router.get("/paginate", ExamResultController.getExamResultsWithPagination);
+/**
+ * @swagger
  * /api/exam-results/{id}:
  *   get:
  *     summary: Lấy thông tin kết quả bài thi theo ID
@@ -317,5 +353,6 @@ router.get("/stats/daily-attempts", ExamResultController.getDailyExamAttempts);
  *                    type: number
  */
 router.get("/stats/avg-score-last-7-days", ExamResultController.getAverageScoreLast7Days);
+
 
 module.exports = router;
