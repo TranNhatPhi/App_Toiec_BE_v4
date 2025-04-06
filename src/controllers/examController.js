@@ -60,6 +60,29 @@ const ExamController = {
         }
     },
 
+    // // 🟢 Random và lấy danh sách câu hỏi của bài thi (có lưu order nếu expired = true)
+    // async randomizeExam(req, res) {
+    //     try {
+    //         const { id } = req.params;
+    //         const expired = req.query.expired === "true";
+
+    //         if (!id || isNaN(Number(id))) {
+    //             return res.status(400).json({ message: "ID bài thi không hợp lệ" });
+    //         }
+
+    //         const result = await ExamService.randomizeExamQuestions(Number(id), expired);
+
+    //         return res.status(200).json({
+    //             message: expired ? "✅ Đề thi đã được random và lưu thứ tự câu hỏi." : "📋 Trả về danh sách câu hỏi theo thứ tự đã lưu.",
+    //             data: result
+    //         });
+    //     } catch (error) {
+    //         console.error("❌ Error in randomizeExam:", error);
+    //         return res.status(500).json({ message: "Lỗi hệ thống", error: error.message });
+    //     }
+    // },
+
+
     async getExamQuestions1(req, res) {
         try {
             const { id } = req.params;  // Lấy ID bài thi từ params

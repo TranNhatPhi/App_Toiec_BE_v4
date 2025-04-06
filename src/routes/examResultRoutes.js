@@ -1,6 +1,7 @@
 const express = require("express");
 const ExamResultController = require("../controllers/examResultController");
 const verifyToken = require("../middlewares/authMiddleware");
+const verifyRole = require("../middlewares/roleMiddleware");
 
 const router = express.Router();
 
@@ -290,7 +291,7 @@ router.post("/submit", verifyToken, ExamResultController.submitExamAnswers);
  *     summary: Xóa kết quả bài thi theo ID
  *     tags: [ExamResults]
  *     security:
- *       - BearerAuth: []  # 🔐 Yêu cầu Bearer Token
+ *       - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -300,11 +301,15 @@ router.post("/submit", verifyToken, ExamResultController.submitExamAnswers);
  *         description: ID của kết quả bài thi cần xóa
  *     responses:
  *       200:
- *         description: Kết quả bài thi đã được xóa thành công
+ *         description: ✅ Kết quả bài thi đã được xóa thành công
+ *       401:
+ *         description: ❌ Chưa xác thực (token thiếu/sai)
+ *       403:
+ *         description: ❌ Không có quyền (chỉ Admin hoặc Moderator)
  *       404:
- *         description: Không tìm thấy kết quả bài thi
+ *         description: ❌ Không tìm thấy kết quả bài thi
  */
-router.delete("/:id", verifyToken, ExamResultController.deleteExamResult);
+router.delete("/:id", verifyToken, verifyRole(1, 3), ExamResultController.deleteExamResult);
 
 
 /**

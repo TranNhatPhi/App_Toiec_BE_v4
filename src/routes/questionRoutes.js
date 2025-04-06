@@ -2,7 +2,7 @@ const express = require("express");
 const QuestionController = require("../controllers/questionController");
 const verifyToken = require("../middlewares/authMiddleware");
 const { upload, optimizeImage } = require("../middlewares/uploadMiddleware");
-
+const verifyRole = require("../middlewares/roleMiddleware");
 const router = express.Router();
 
 /**
@@ -152,7 +152,7 @@ router.get("/part/:part_id", QuestionController.getQuestionsByPart);
  *       401:
  *         description: Chưa đăng nhập (Missing JWT Token)
  */
-router.post("/", verifyToken, QuestionController.createQuestion);
+router.post("/", verifyToken, verifyRole(1, 3), QuestionController.createQuestion);
 
 /**
  * @swagger
@@ -175,36 +175,48 @@ router.post("/", verifyToken, QuestionController.createQuestion);
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - question_text
+ *               - option_a
+ *               - option_b
+ *               - option_c
+ *               - option_d
+ *               - correct_answer
  *             properties:
  *               question_text:
  *                 type: string
- *                 example: "Updated question text?"
+ *                 example: "What is the capital of France?"
  *               option_a:
  *                 type: string
- *                 example: "Updated A"
+ *                 example: "Berlin"
  *               option_b:
  *                 type: string
- *                 example: "Updated B"
+ *                 example: "Madrid"
  *               option_c:
  *                 type: string
- *                 example: "Updated C"
+ *                 example: "Paris"
  *               option_d:
  *                 type: string
- *                 example: "Updated D"
+ *                 example: "Rome"
  *               correct_answer:
  *                 type: string
- *                 example: "B"
+ *                 enum: [A, B, C, D]
+ *                 example: "C"
+ *                 description: Đáp án đúng phải là A/B/C/D
  *     responses:
  *       200:
- *         description: Câu hỏi đã được cập nhật
+ *         description: ✅ Câu hỏi đã được cập nhật thành công
  *       400:
- *         description: Dữ liệu đầu vào không hợp lệ
- *       404:
- *         description: Không tìm thấy câu hỏi
+ *         description: ❌ Dữ liệu đầu vào không hợp lệ
  *       401:
- *         description: Chưa đăng nhập (Missing JWT Token)
+ *         description: ❌ Chưa đăng nhập (thiếu hoặc sai token)
+ *       403:
+ *         description: ❌ Không có quyền (chỉ Admin hoặc Moderator mới được cập nhật)
+ *       404:
+ *         description: ❌ Không tìm thấy câu hỏi theo ID
  */
-router.put("/:id", verifyToken, QuestionController.updateQuestion);
+
+router.put("/:id", verifyToken, verifyRole(1, 3), QuestionController.updateQuestion);
 
 /**
  * @swagger
@@ -229,7 +241,7 @@ router.put("/:id", verifyToken, QuestionController.updateQuestion);
  *       401:
  *         description: Chưa đăng nhập (Missing JWT Token)
  */
-router.delete("/:id", verifyToken, QuestionController.deleteQuestion);
+router.delete("/:id", verifyToken, verifyRole(1, 3), QuestionController.deleteQuestion);
 
 /**
  * @swagger
@@ -318,7 +330,7 @@ router.delete("/remove-image/:id", verifyToken, QuestionController.removeQuestio
  *       500:
  *         description: Lỗi hệ thống khi xử lý file CSV
  */
-router.post("/import-csv", verifyToken, QuestionController.uploadCsv.single("file"), QuestionController.importFromCSV);
+router.post("/import-csv", verifyToken, verifyRole(1, 3), QuestionController.uploadCsv.single("file"), QuestionController.importFromCSV);
 
 
 module.exports = router;
