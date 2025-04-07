@@ -11,8 +11,8 @@ const options = {
         },
         servers: [
             {
-                url: "http://localhost:5000",
-                // url: baseUrl, // Sử dụng biến môi trường BASE_URL
+                // url: "http://localhost:5000",
+                url: baseUrl, // Sử dụng biến môi trường BASE_URL
                 description: baseUrl.includes("localhost") ? "Local server" : "Production server",
             }
         ],
