@@ -65,45 +65,45 @@ router.get("/:id", ExamController.getExamById);
 //  *         description: Không tìm thấy câu hỏi hoặc bài thi
 //  */
 // router.get("/:id/questions", ExamController.getExamQuestions);
-// /**
-//  * @swagger
-//  * /api/exams/{id}/randomize:
-//  *   post:
-//  *     summary: Random và lưu thứ tự câu hỏi của đề thi
-//  *     tags: [Exams]
-//  *     parameters:
-//  *       - in: path
-//  *         name: id
-//  *         required: true
-//  *         schema:
-//  *           type: integer
-//  *         description: ID của bài thi cần random đề
-//  *       - in: query
-//  *         name: expired
-//  *         required: true
-//  *         schema:
-//  *           type: boolean
-//  *           example: true
-//  *         description: Chỉ random nếu expired = true. Nếu false, chỉ lấy danh sách theo thứ tự đã có.
-//  *     responses:
-//  *       200:
-//  *         description: Trả về kết quả random hoặc danh sách câu hỏi
-//  *         content:
-//  *           application/json:
-//  *             schema:
-//  *               type: object
-//  *               properties:
-//  *                 message:
-//  *                   type: string
-//  *                   example: ✅ Đề thi đã được random và lưu thứ tự câu hỏi.
-//  *                 data:
-//  *                   type: object
-//  *       400:
-//  *         description: ID không hợp lệ
-//  *       500:
-//  *         description: Lỗi hệ thống
-//  */
-// router.post("/:id/randomize", ExamController.randomizeExam);
+/**
+ * @swagger
+ * /api/exams/{id}/randomize:
+ *   post:
+ *     summary: Random và lưu thứ tự câu hỏi của đề thi
+ *     tags: [Exams]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID của bài thi cần random đề
+ *       - in: query
+ *         name: expired
+ *         required: true
+ *         schema:
+ *           type: boolean
+ *           example: true
+ *         description: Chỉ random nếu expired = true. Nếu false, chỉ lấy danh sách theo thứ tự đã có.
+ *     responses:
+ *       200:
+ *         description: Trả về kết quả random hoặc danh sách câu hỏi
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: ✅ Đề thi đã được random và lưu thứ tự câu hỏi.
+ *                 data:
+ *                   type: object
+ *       400:
+ *         description: ID không hợp lệ
+ *       500:
+ *         description: Lỗi hệ thống
+ */
+router.post("/:id/randomize", ExamController.randomizeExam);
 
 /**
  * @swagger
