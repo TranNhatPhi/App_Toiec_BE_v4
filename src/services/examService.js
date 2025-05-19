@@ -131,7 +131,7 @@ const ExamService = {
             });
 
             if (!examDetails) throw new Error("Exam not found");
-
+            
             const examResult = {
                 exam_id: examDetails.id,
                 audio: examDetails.audio,
@@ -142,13 +142,10 @@ const ExamService = {
                         .sort((a, b) => a.part_number - b.part_number)
                         .map(async ep => {
                             const limit = partQuestionLimits[ep.part_number] || 0;
-
                             let questions = [...ep.Questions];
-
                             if (isTimeExpired) {
                                 // Random câu hỏi và lưu thứ tự nếu expired
                                 questions = questions.sort(() => 0.5 - Math.random()).slice(0, limit);
-
                                 // Lưu thứ tự đã random vào trường order
                                 await Promise.all(
                                     questions.map((q, index) => {
@@ -163,6 +160,7 @@ const ExamService = {
                                     .sort((a, b) => a.order - b.order)
                                     .slice(0, limit);
                             }
+
 
                             return {
                                 part_id: ep.id,
