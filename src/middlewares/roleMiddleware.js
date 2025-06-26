@@ -1,19 +1,22 @@
+const R = require("../utils/responseHelper"); // ✅ helper phản hồi
+
 const verifyRole = (...allowedRoles) => {
     return (req, res, next) => {
         try {
-            // Kiểm tra nếu req.user không tồn tại (JWT middleware chưa chạy hoặc token sai)
-            if (!req.user || !req.user.role) {
-                return res.status(403).json({ error: "Không có quyền truy cập!" });
+            if (!req.user || typeof req.user.role === "undefined") {
+                return R.forbiddenResponse(res, "Không có quyền truy cập!"); // 403
             }
 
-            const userRole = req.user.role; // Lấy role_id từ JWT
+            const userRole = req.user.role;
+
             if (!allowedRoles.includes(userRole)) {
-                return res.status(403).json({ error: "Bạn không có quyền thực hiện hành động này!" });
+                return R.forbiddenResponse(res, "Bạn không có quyền thực hiện hành động này!");
             }
 
-            next(); // Cho phép tiếp tục nếu role hợp lệ
+            next(); // ✅ Role hợp lệ, cho phép tiếp tục
         } catch (error) {
-            return res.status(500).json({ error: "Lỗi phân quyền!" });
+            console.error("❌ Lỗi phân quyền:", error);
+            return R.serverErrorResponse(res, "Lỗi phân quyền!");
         }
     };
 };

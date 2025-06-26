@@ -2,7 +2,7 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/user");
-const { sequelize } = require("../config/db");
+const R = require("../utils/responseHelper");
 
 const router = express.Router();
 
@@ -25,72 +25,98 @@ const router = express.Router();
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - fullname
+ *               - email
+ *               - password
+ *               - retype_password
  *             properties:
  *               fullname:
  *                 type: string
- *                 example: "Nguyễn Văn A"
+ *                 example: Nguyễn Văn A
  *               email:
  *                 type: string
- *                 example: "example@example.com"
+ *                 example: user@example.com
  *               password:
  *                 type: string
- *                 example: "123456"
+ *                 example: 123456
  *               retype_password:
  *                 type: string
- *                 example: "123456"
+ *                 example: 123456
  *               address:
  *                 type: string
- *                 example: "Hà Nội, Việt Nam"
+ *                 example: Hà Nội, Việt Nam
  *               phone:
  *                 type: string
- *                 example: "0987654321"
+ *                 example: "0123456789"
  *               date_of_birth:
  *                 type: string
  *                 format: date
- *                 example: "2000-01-01"
+ *                 example: 2000-01-01
  *     responses:
  *       201:
  *         description: Đăng ký thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Đăng ký thành công
+ *                 token:
+ *                   type: string
+ *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
  *       400:
- *         description: Lỗi dữ liệu đầu vào (Mật khẩu không khớp, email đã tồn tại, v.v.)
+ *         description: Mật khẩu không khớp
+ *       409:
+ *         description: Email đã tồn tại
  *       500:
  *         description: Lỗi hệ thống
  */
 router.post("/register", async (req, res) => {
-    const { fullname, email, password, retype_password, address, phone, date_of_birth } = req.body;
+    const {
+        fullname,
+        email,
+        password,
+        retype_password,
+        address,
+        phone,
+        date_of_birth,
+    } = req.body;
 
     if (password !== retype_password) {
-        return res.status(400).json({ error: "Mật khẩu không khớp!" });
+        return R.badRequestResponse(res, "Mật khẩu không khớp!");
     }
 
     try {
-        // Kiểm tra email đã tồn tại chưa
         const existingUser = await User.findOne({ where: { email } });
         if (existingUser) {
-            return res.status(400).json({ error: "Email đã tồn tại" });
+            return R.conflictResponse(res, "Email đã tồn tại");
         }
 
-        // Mã hóa mật khẩu
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Tạo người dùng mới
         const newUser = await User.create({
             fullname,
             email,
             password: hashedPassword,
             address,
             phone,
-            date_of_birth,
-            role_id: 2, // Mặc định role là User
+            date_of_birth: date_of_birth ? new Date(date_of_birth) : null,
+            role_id: 2,
         });
 
-        // Tạo token JWT
-        const token = jwt.sign({ userId: newUser.id, email: newUser.email, role: newUser.role_id }, process.env.JWT_SECRET, { expiresIn: "2h" });
+        const token = jwt.sign(
+            { userId: newUser.id, email: newUser.email, role: newUser.role_id },
+            process.env.JWT_SECRET,
+            { expiresIn: process.env.JWT_EXPIRES_IN || "30d" }
+        );
 
-        res.status(201).json({ message: "Đăng ký thành công", token });
+        return R.createdResponse(res, "Đăng ký thành công", { token });
     } catch (error) {
-        console.error("Lỗi đăng ký:", error);
-        res.status(500).json({ error: "Lỗi hệ thống" });
+        console.error("❌ Lỗi đăng ký:", error);
+        return R.serverErrorResponse(res, "Đã xảy ra lỗi hệ thống khi đăng ký");
     }
 });
 
@@ -106,16 +132,19 @@ router.post("/register", async (req, res) => {
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - email
+ *               - password
  *             properties:
  *               email:
  *                 type: string
- *                 example: "phivt1234@gmail.com"
+ *                 example: user@example.com
  *               password:
  *                 type: string
- *                 example: "123456"
+ *                 example: 123456
  *     responses:
  *       200:
- *         description: Đăng nhập thành công, trả về token JWT
+ *         description: Đăng nhập thành công, trả về token
  *         content:
  *           application/json:
  *             schema:
@@ -123,12 +152,12 @@ router.post("/register", async (req, res) => {
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "Đăng nhập thành công"
+ *                   example: Đăng nhập thành công
  *                 token:
  *                   type: string
- *                   example: "eyJhbGciOiJIUzI1..."
- *       400:
- *         description: Sai email hoặc mật khẩu
+ *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *       401:
+ *         description: Email hoặc mật khẩu không đúng
  *       500:
  *         description: Lỗi hệ thống
  */
@@ -139,30 +168,25 @@ router.post("/login", async (req, res) => {
         const user = await User.findOne({ where: { email } });
 
         if (!user) {
-            return res.status(400).json({ error: "Email không tồn tại" });
+            return R.unauthorizedResponse(res, "Email không tồn tại");
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
-
         if (!isMatch) {
-            return res.status(400).json({ error: "Mật khẩu không đúng" });
+            return R.unauthorizedResponse(res, "Mật khẩu không đúng");
         }
 
-        // Tạo token
         const token = jwt.sign(
             { userId: user.id, email: user.email, role: user.role_id },
             process.env.JWT_SECRET,
-            { expiresIn: "2h" }
+            { expiresIn: process.env.JWT_EXPIRES_IN || "30d" }
         );
 
-        console.log("Generated Token:", token); // ✅ Kiểm tra token sau khi tạo
-
-        res.status(200).json({ message: "Đăng nhập thành công", token });
+        return R.successResponse(res, "Đăng nhập thành công", { token });
     } catch (error) {
-        console.error("Lỗi đăng nhập:", error);
-        res.status(500).json({ error: "Lỗi hệ thống" });
+        console.error("❌ Lỗi đăng nhập:", error);
+        return R.serverErrorResponse(res, "Đã xảy ra lỗi hệ thống khi đăng nhập");
     }
 });
-
 
 module.exports = router;
